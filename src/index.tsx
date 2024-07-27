@@ -1,14 +1,15 @@
 import * as React from 'react';
-import { memo, useEffect, useState } from 'react'
-import { StyleSheet, Text, TextStyle, type ViewStyle, View } from 'react-native'
+import type { ViewStyle } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { View } from 'react-native';
+import type { SharedValue } from 'react-native-reanimated';
 import Animated, {
-  type SharedValue,
   runOnJS,
   useAnimatedReaction,
   useAnimatedStyle,
   useFrameCallback,
   useSharedValue,
-} from 'react-native-reanimated'
+} from 'react-native-reanimated';
 
 type MarqueeDirection = 'up' | 'left' | 'right' | 'down';
 
@@ -169,44 +170,3 @@ const styles = StyleSheet.create({
   hidden: { opacity: 0, zIndex: -9999 },
   row: { flexDirection: 'row', overflow: 'hidden' },
 });
-
-export const AutoMarquee = React.memo(
-  (
-    props: Omit<MarqueeProps, 'children' | 'style'> & {
-      children: string
-      className?: string
-      style?: TextStyle
-    }
-  ) => {
-    const [textWidth, setTextWidth] = useState(0)
-    const [viewWidth, setViewWidth] = useState(0)
-
-    useEffect(() => {
-      console.log({ 
-        text: props?.text,
-        textWidth,
-        viewWidth
-      })
-    }, [textWidth, viewWidth])
-
-    return (
-      <View style={{ width: "100%" }} onLayout={(e) => setViewWidth(e.nativeEvent.layout.width)}>
-        <View
-          style={{ height: 0, alignSelf: 'flex-start' }}
-          onLayout={(e) => {
-            setTextWidth(e.nativeEvent.layout.width)
-          }}
-        >
-          <Text className={props.className} children={props.children} />
-        </View>
-        {textWidth >= viewWidth ? (
-          <Text style={props.style} className={props.className} children={props.children} />
-        ) : (
-          <Marquee {...{ ...props, style: undefined, children: undefined, textWidth }}>
-            <Text style={props.style} className={props.className} children={props.children} />
-          </Marquee>
-        )}
-      </View>
-    )
-  }
-)
