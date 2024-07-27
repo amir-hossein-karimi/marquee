@@ -1,100 +1,148 @@
-import { memo, useEffect, useState } from 'react'
-import { StyleSheet, Text, TextStyle, type ViewStyle, View } from 'react-native'
+import * as React from 'react';
+import type { ViewStyle } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { View } from 'react-native';
+import type { SharedValue } from 'react-native-reanimated';
 import Animated, {
-  type SharedValue,
   runOnJS,
   useAnimatedReaction,
   useAnimatedStyle,
   useFrameCallback,
   useSharedValue,
-} from 'react-native-reanimated'
+} from 'react-native-reanimated';
+
+type MarqueeDirection = 'up' | 'left' | 'right' | 'down';
 
 const AnimatedChild = ({
   index,
   children,
   anim,
+  textHeight,
   textWidth,
   spacing,
+  direction = 'right',
 }: React.PropsWithChildren<{
-  index: number
-  anim: SharedValue<number>
-  textWidth: SharedValue<number>
-  spacing: number
+  index: number;
+  anim: SharedValue<number>;
+  textHeight: SharedValue<number>;
+  textWidth: SharedValue<number>;
+  spacing: number;
+  direction?: MarqueeDirection;
 }>) => {
   const stylez = useAnimatedStyle(() => {
+    const vertical = direction === 'up' || direction === 'down';
+    const horizontal = direction === 'left' || direction === 'right';
+
     return {
       position: 'absolute',
-      width: textWidth.value + spacing,
-      alignSelf: 'flex-start',
-      left: index * (textWidth.value + spacing),
+      top: vertical && direction === 'up' ? index * (textHeight.value + spacing) : undefined,
+      bottom: vertical && direction === 'down' ? index * (textHeight.value + spacing) : undefined,
+      right: horizontal && direction === 'right' ? index * (textWidth.value + spacing) : undefined,
+      left: horizontal && direction === 'left' ? index * (textWidth.value + spacing) : undefined,
       transform: [
         {
-          translateX: -(anim.value % (textWidth.value + spacing)),
+          ...(vertical
+            ? { translateY: (anim.value % (textHeight.value + spacing)) * (direction === 'up' ? -1 : 1) }
+            : { translateX: (anim.value % (textWidth.value + spacing)) * (direction === 'left' ? -1 : 1) }),
         },
       ],
-    }
-  }, [index, spacing, textWidth])
-  return <Animated.View style={stylez}>{children}</Animated.View>
-}
+    };
+  }, [index, spacing, textHeight, textWidth]);
+  return <Animated.View style={stylez}>{children}</Animated.View>;
+};
 
 export type MarqueeProps = React.PropsWithChildren<{
-  speed?: number
-  spacing?: number
-  style?: ViewStyle
-}>
+  speed?: number;
+  spacing?: number;
+  style?: ViewStyle;
+  /**
+   * Direction in which the marquee should scroll
+   */
+  direction?: MarqueeDirection;
+  /**
+   * Delay in milliseconds before the marquee starts
+   */
+  delay?: number;
+}>;
 
 /**
  * Used to animate the given children in a horizontal manner.
  */
-export const Marquee = memo(({ speed = 1, children, spacing = 0, style }: MarqueeProps) => {
-  const parentWidth = useSharedValue(0)
-  const textWidth = useSharedValue(0)
-  const [cloneTimes, setCloneTimes] = useState(0)
-  const anim = useSharedValue(0)
+const Marquee = React.memo(({ speed = 1, children, spacing = 0, style, delay, direction = 'right' }: MarqueeProps) => {
+  const parentHeight = useSharedValue(0);
+  const parentWidth = useSharedValue(0);
+  const textHeight = useSharedValue(0);
+  const textWidth = useSharedValue(0);
+  const [cloneTimes, setCloneTimes] = React.useState(0);
+  const anim = useSharedValue(0);
 
-  useFrameCallback(() => {
-    anim.value += speed
-  }, true)
+  const animationCallback = useFrameCallback(
+    () => {
+      anim.value += speed;
+    },
+    delay ? false : true,
+  );
+
+  React.useEffect(() => {
+    if (delay) {
+      setTimeout(() => {
+        animationCallback.setActive(true);
+      }, delay);
+    }
+  }, []);
 
   useAnimatedReaction(
     () => {
-      if (textWidth.value === 0 || parentWidth.value === 0) {
-        return 0
+      if (direction === 'up' || direction === 'down') {
+        if (textHeight.value === 0 || parentHeight.value === 0) {
+          return 0;
+        }
+        return Math.round(parentHeight.value / textHeight.value) + 1;
+      } else {
+        // Horizontal
+        if (textHeight.value === 0 || parentHeight.value === 0) {
+          return 0;
+        }
+        return Math.round(parentHeight.value / textHeight.value) + 1;
       }
-      return Math.round(parentWidth.value / textWidth.value) + 1
     },
     (v) => {
       if (v === 0) {
-        return
+        return;
       }
-      // This is going to cover the case when the text/element size
-      // is greater than the actual parent size
-      // Double this to cover the entire screen twice, in this way we can
-      // reset the position of the first element when its going to move out
-      // of the screen without any noticible glitch
-      runOnJS(setCloneTimes)(v * 2)
+
+      if (direction === 'up' || direction === 'down') {
+        runOnJS(setCloneTimes)(v);
+      } else {
+        // This is going to cover the case when the text/element size
+        // is greater than the actual parent size
+        // Double this to cover the entire screen twice, in this way we can
+        // reset the position of the first element when its going to move out
+        // of the screen without any noticible glitch
+        runOnJS(setCloneTimes)(v * 2);
+      }
     },
-    []
-  )
+    [],
+  );
   return (
     <Animated.View
       style={style}
       onLayout={(ev) => {
-        parentWidth.value = ev.nativeEvent.layout.width
+        parentHeight.value = ev.nativeEvent.layout.height;
+        parentWidth.value = ev.nativeEvent.layout.width;
       }}
-      pointerEvents="box-none"
-    >
+      pointerEvents="box-none">
       <Animated.View style={styles.row} pointerEvents="box-none">
         {
           // We are adding the text inside a ScrollView because in this way we
           // ensure that its not going to "wrap".
         }
-        <Animated.ScrollView horizontal style={styles.hidden} pointerEvents="box-none">
+        <Animated.ScrollView style={styles.hidden} pointerEvents="box-none">
           <View
             onLayout={(ev) => {
-              textWidth.value = ev.nativeEvent.layout.width
-            }}
-          >
+              textHeight.value = ev.nativeEvent.layout.height;
+              textWidth.value = ev.nativeEvent.layout.width;
+            }}>
             {children}
           </View>
         </Animated.ScrollView>
@@ -105,22 +153,23 @@ export const Marquee = memo(({ speed = 1, children, spacing = 0, style }: Marque
                 key={`clone-${index}`}
                 index={index}
                 anim={anim}
+                textHeight={textHeight}
                 textWidth={textWidth}
                 spacing={spacing}
-              >
+                direction={direction}>
                 {children}
               </AnimatedChild>
-            )
+            );
           })}
       </Animated.View>
     </Animated.View>
-  )
-})
+  );
+});
 
 const styles = StyleSheet.create({
   hidden: { opacity: 0, zIndex: -9999 },
   row: { flexDirection: 'row', overflow: 'hidden' },
-})
+});
 
 export const AutoMarquee = memo(
   (
@@ -134,21 +183,24 @@ export const AutoMarquee = memo(
     const [viewWidth, setViewWidth] = useState(0)
 
     useEffect(() => {
-      console.log('textWidth', textWidth)
-      console.log('viewWidth', viewWidth)
+      console.log({ 
+        text: props?.text,
+        textWidth,
+        viewWidth
+      })
     }, [textWidth, viewWidth])
 
     return (
-      <View className="w-full" onLayout={(e) => setViewWidth(e.nativeEvent.layout.width)}>
+      <View style={{ width: "100%" }} onLayout={(e) => setViewWidth(e.nativeEvent.layout.width)}>
         <View
           style={{ height: 0, alignSelf: 'flex-start' }}
           onLayout={(e) => {
             setTextWidth(e.nativeEvent.layout.width)
           }}
         >
-          <Text style={{ width: '100%' }} className={props.className} children={props.children} />
+          <Text className={props.className} children={props.children} />
         </View>
-        {textWidth < viewWidth ? (
+        {textWidth >= viewWidth ? (
           <Text style={props.style} className={props.className} children={props.children} />
         ) : (
           <Marquee {...{ ...props, style: undefined, children: undefined, textWidth }}>

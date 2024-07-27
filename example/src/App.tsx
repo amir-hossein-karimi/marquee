@@ -1,7 +1,7 @@
 import * as React from 'react';
 
 import { StyleSheet, View } from 'react-native';
-import { Marquee } from '@animatereactnative/marquee';
+import { Marquee } from '@amir-hossein-karimi/marquee';
 import { Box } from './components/Box';
 import { Heading } from './components/Heading';
 import { StatusBar } from 'expo-status-bar';
