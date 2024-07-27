@@ -1,15 +1,14 @@
 import * as React from 'react';
-import type { ViewStyle } from 'react-native';
-import { StyleSheet } from 'react-native';
-import { View } from 'react-native';
-import type { SharedValue } from 'react-native-reanimated';
+import { memo, useEffect, useState } from 'react'
+import { StyleSheet, Text, TextStyle, type ViewStyle, View } from 'react-native'
 import Animated, {
+  type SharedValue,
   runOnJS,
   useAnimatedReaction,
   useAnimatedStyle,
   useFrameCallback,
   useSharedValue,
-} from 'react-native-reanimated';
+} from 'react-native-reanimated'
 
 type MarqueeDirection = 'up' | 'left' | 'right' | 'down';
 
@@ -171,7 +170,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', overflow: 'hidden' },
 });
 
-export const AutoMarquee = memo(
+export const AutoMarquee = React.memo(
   (
     props: Omit<MarqueeProps, 'children' | 'style'> & {
       children: string
