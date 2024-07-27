@@ -68,7 +68,7 @@ export type MarqueeProps = React.PropsWithChildren<{
 /**
  * Used to animate the given children in a horizontal manner.
  */
-const Marquee = React.memo(({ speed = 1, children, spacing = 0, style, delay, direction = 'right' }: MarqueeProps) => {
+export const Marquee = React.memo(({ speed = 1, children, spacing = 0, style, delay, direction = 'right' }: MarqueeProps) => {
   const parentHeight = useSharedValue(0);
   const parentWidth = useSharedValue(0);
   const textHeight = useSharedValue(0);
