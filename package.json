@@ -1,6 +1,6 @@
 {
   "name": "@amir-hossein-karimi/marquee",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A React Native Marquee component",
   "main": "lib/commonjs/index",
   "module": "lib/module/index",
