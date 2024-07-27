@@ -21,7 +21,7 @@ React Native Marquee component, a cross-platform marquee component, powered by R
 ## Installation
 
 ```sh
-npm install @animatereactnative/marquee
+npm install @amir-hossein-karimi/marquee
 ```
 
 > Also, you need to install [react-native-reanimated](https://github.com/software-mansion/react-native-reanimated), and follow their installation instructions.
@@ -29,7 +29,7 @@ npm install @animatereactnative/marquee
 ## Usage
 
 ```js
-import { Marquee } from '@animatereactnative/marquee';
+import { Marquee } from '@amir-hossein-karimi/marquee';
 
 // ...
 
